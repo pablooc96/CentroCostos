@@ -1,0 +1,544 @@
+SQL> --
+SQL> ALTER SESSION SET NLS_LANGUAGE=American;
+
+Session altered.
+
+SQL> ALTER SESSION SET NLS_TERRITORY=America;
+
+Session altered.
+
+SQL> ALTER SESSION SET "_ORACLE_SCRIPT"= TRUE;
+
+Session altered.
+
+SQL> 
+SQL> CREATE USER CENTROCOSTOS IDENTIFIED BY ADMIN123;
+
+User created.
+
+SQL> 
+SQL> GRANT CONNECT,DBA, RESOURCE TO CENTROCOSTOS;
+
+Grant succeeded.
+
+SQL> 
+SQL> ALTER USER CENTROCOSTOS QUOTA UNLIMITED  ON USERS;
+
+User altered.
+
+SQL> 
+SQL> CONN CENTROCOSTOS/ADMIN123;
+Connected.
+SQL> 
+SQL> --
+SQL> -- CREACION DE TABLAS Y CONSTRAINTS Y VISTAS
+SQL> --
+SQL> @@CentroCostos_creation
+SQL> SET FEEDBACK 1
+SQL> SET NUMWIDTH 10
+SQL> SET LINESIZE 80
+SQL> SET TRIMSPOOL ON
+SQL> SET PAGESIZE 100
+SQL> 
+SQL> -------------------------------------------------------------------------------
+SQL> REM ********************************************************************
+SQL> REM Create the CENTROCOSTOS table to hold all teh Centro de Costos information
+SQL> 
+SQL> Prompt ******  Creating CENTROCOSTOS table ....
+******  Creating CENTROCOSTOS table ....
+SQL> --DROP TABLE CENTROCOSTOS;
+SQL> 
+SQL> CREATE TABLE CENTROCOSTOS
+  2  	 ( ID_CENTRO INT GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1)
+  3  	 , NOMBRE VARCHAR2(100) NOT NULL
+  4  	     , SALDO INT NOT NULL
+  5  	     , PRESUPUESTO INT NOT NULL
+  6  	     , GASTO INT NOT NULL
+  7  	     , MES_GASTO VARCHAR2(10) NOT NULL
+  8  	 );
+
+Table created.
+
+SQL> 
+SQL> CREATE UNIQUE INDEX INDX_CENTROCOSTOS_PK
+  2  ON CENTROCOSTOS (ID_CENTRO);
+
+Index created.
+
+SQL> 
+SQL> ALTER TABLE CENTROCOSTOS
+  2  ADD ( CONSTRAINT INDX_CENTROCOSTOS_PK
+  3  		      PRIMARY KEY (ID_CENTRO)
+  4  	 ) ;
+
+Table altered.
+
+SQL> 
+SQL> -------------------------------------------------------------------------------
+SQL> 
+SQL> REM ********************************************************************
+SQL> REM Create the DEPARTAMENTOS table to hold the DEPARTMENTS
+SQL> 
+SQL> Prompt ******  Creating DEPARTAMENTOS table ....
+******  Creating DEPARTAMENTOS table ....
+SQL> --DROP TABLE DEPARTAMENTO;
+SQL> 
+SQL> CREATE TABLE DEPARTAMENTOS
+  2  	     ( ID_DEPARTAMENTO INT GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1)
+  3  	     , NOMBRE VARCHAR2(100) NOT NULL
+  4  	     , USUARIOS INT NOT NULL
+  5  	     , ID_CENTRO_COSTOS INT NOT NULL
+  6  	     );
+
+Table created.
+
+SQL> 
+SQL> CREATE UNIQUE INDEX INDX_DEPARTAMENTO_PK
+  2  ON DEPARTAMENTOS (ID_DEPARTAMENTO);
+
+Index created.
+
+SQL> 
+SQL> ALTER TABLE DEPARTAMENTOS
+  2  ADD ( CONSTRAINT INDX_DEPARTAMENTO_PK
+  3  		      PRIMARY KEY (ID_DEPARTAMENTO)
+  4  	 , CONSTRAINT CENTRO_DEP_FK
+  5  			      FOREIGN KEY (ID_CENTRO_COSTOS)
+  6  			      REFERENCES CENTROCOSTOS(ID_CENTRO)
+  7  	 ) ;
+
+Table altered.
+
+SQL> 
+SQL> 
+SQL> -------------------------------------------------------------------------------
+SQL> 
+SQL> REM ********************************************************************
+SQL> REM Create the USUARIOS table to hold the LIST OF USUARIOS FOR THE CENTRO DE COSTOS
+SQL> 
+SQL> Prompt ******  Creating USUARIOS table ....
+******  Creating USUARIOS table ....
+SQL> --DROP TABLE USUARIOS;
+SQL> 
+SQL> CREATE TABLE USUARIOS
+  2  	     ( ID_USUARIO INT GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1)
+  3  	     , NOMBRE VARCHAR2(100) NOT NULL
+  4  	     , PRIMERAPELLIDO VARCHAR2(100) NOT NULL
+  5  	     , SEGUNDOAPELLIDO VARCHAR2(100) NOT NULL
+  6  	     , USUARIO_RED VARCHAR2(100) NOT NULL
+  7  	     , CORREO VARCHAR2(100) NOT NULL
+  8  	     , NUMERO_TARJETA VARCHAR2(16) NOT NULL
+  9  	     , ID_DEPARTAMENTO INT NOT NULL
+ 10  	     );
+
+Table created.
+
+SQL> 
+SQL> CREATE UNIQUE INDEX INDX_USUARIO_PK
+  2  ON USUARIOS (ID_USUARIO);
+
+Index created.
+
+SQL> 
+SQL> ALTER TABLE USUARIOS
+  2  ADD ( CONSTRAINT INDX_USUARIO_PK
+  3  		      PRIMARY KEY (ID_USUARIO)
+  4  	     , CONSTRAINT ID_DEP_FK
+  5  			      FOREIGN KEY (ID_DEPARTAMENTO)
+  6  			      REFERENCES DEPARTAMENTOS(ID_DEPARTAMENTO)
+  7  	 ) ;
+
+Table altered.
+
+SQL> 
+SQL> -------------------------------------------------------------------------------
+SQL> 
+SQL> REM ********************************************************************
+SQL> REM Create the RUBROS table to hold the LIST OF rubros FOR EACH centro de costos
+SQL> 
+SQL> Prompt ******  Creating RUBROS table ....
+******  Creating RUBROS table ....
+SQL> --DROP TABLE FACTURA;
+SQL> 
+SQL> CREATE TABLE RUBROS
+  2  	     ( ID_RUBRO INT GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1)
+  3  	     , NOMBRE_RUBRO VARCHAR2(100) NOT NULL
+  4  	     , DESCRIPCION VARCHAR2(100) NOT NULL
+  5  	     , MES VARCHAR2(10) NOT NULL
+  6  	     , ID_CENTRO_COSTOS INT NOT NULL
+  7  	     );
+
+Table created.
+
+SQL> 
+SQL> CREATE UNIQUE INDEX INDX_RUBROS_PK
+  2  ON RUBROS (ID_RUBRO);
+
+Index created.
+
+SQL> 
+SQL> ALTER TABLE RUBROS
+  2  ADD ( CONSTRAINT INDX_RUBRO_PK
+  3  		      PRIMARY KEY (ID_RUBRO)
+  4  	     , CONSTRAINT ID_CENTRO_FK
+  5  			      FOREIGN KEY (ID_CENTRO_COSTOS)
+  6  			      REFERENCES CENTROCOSTOS(ID_CENTRO)
+  7  	 ) ;
+
+Table altered.
+
+SQL> 
+SQL> -------------------------------------------------------------------------------
+SQL> 
+SQL> REM ********************************************************************
+SQL> REM Create the FACTURAS table to hold the LIST OF facturas
+SQL> 
+SQL> Prompt ******  Creating FACTURAS table ....
+******  Creating FACTURAS table ....
+SQL> --DROP TABLE FACTURAS;
+SQL> 
+SQL> CREATE TABLE FACTURAS
+  2  	     ( ID_FACTURA INT GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1)
+  3  	     , FECHA DATE NOT NULL
+  4  	     , ID_USUARIO INT NOT NULL
+  5  	     );
+
+Table created.
+
+SQL> 
+SQL> CREATE UNIQUE INDEX INDX_FACTURA_PK
+  2  ON FACTURAS (ID_FACTURA);
+
+Index created.
+
+SQL> 
+SQL> ALTER TABLE FACTURAS
+  2  ADD ( CONSTRAINT INDX_FACTURA_PK
+  3  		      PRIMARY KEY (ID_FACTURA)
+  4  	     , CONSTRAINT ID_USUARIO_FK
+  5  			      FOREIGN KEY (ID_USUARIO)
+  6  			      REFERENCES USUARIOS(ID_USUARIO)
+  7  	 ) ;
+
+Table altered.
+
+SQL> 
+SQL> -------------------------------------------------------------------------------
+SQL> 
+SQL> REM ********************************************************************
+SQL> REM Create the COMPRAS table to hold LIST OF compras
+SQL> 
+SQL> Prompt ******  Creating COMPRAS table ....
+******  Creating COMPRAS table ....
+SQL> --DROP TABLE COMPRAS;
+SQL> 
+SQL> CREATE TABLE COMPRAS
+  2  	     ( ID_COMPRA INT GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1)
+  3  	     , MONTO INT NOT NULL
+  4  	     , PERMISO_COMPRA INT NOT NULL
+  5  	     , CANTIDAD INT NOT NULL
+  6  	     , ID_CENTRO_COSTOS INT NOT NULL
+  7  	     , ID_USUARIO INT NOT NULL
+  8  	     , ID_RUBRO INT NOT NULL
+  9  	     , ID_FACTURA INT NOT NULL
+ 10  	     );
+
+Table created.
+
+SQL> 
+SQL> CREATE UNIQUE INDEX INDX_COMPRAS_PK
+  2  ON COMPRAS (ID_COMPRA);
+
+Index created.
+
+SQL> 
+SQL> ALTER TABLE COMPRAS
+  2  ADD ( CONSTRAINT INDX_COMPRAS_PK
+  3  		      PRIMARY KEY (ID_COMPRA)
+  4  	     , CONSTRAINT ID_CENTRO_COMPRAS_FK
+  5  			      FOREIGN KEY (ID_CENTRO_COSTOS)
+  6  			      REFERENCES CENTROCOSTOS(ID_CENTRO)
+  7  	     , CONSTRAINT ID_USUARIO_COMPRAS_FK
+  8  			      FOREIGN KEY (ID_USUARIO)
+  9  			      REFERENCES USUARIOS(ID_USUARIO)
+ 10  	     , CONSTRAINT ID_RUBRO_COMPRAS_FK
+ 11  			      FOREIGN KEY (ID_RUBRO)
+ 12  			      REFERENCES RUBROS(ID_RUBRO)
+ 13  	     , CONSTRAINT ID_FACTURA_COMPRAS_FK
+ 14  			      FOREIGN KEY (ID_FACTURA)
+ 15  			      REFERENCES FACTURAS(ID_FACTURA)
+ 16  	 ) ;
+
+Table altered.
+
+SQL> 
+SQL> 
+SQL> -------------------------------------------------------------------------------
+SQL> 
+SQL> REM ********************************************************************
+SQL> REM Create the RUBROS_X_DEPARTAMENTO that sum all the visits per news
+SQL> 
+SQL> Prompt ******  Creating RUBROS_X_DEPARTAMENTO view ...
+******  Creating RUBROS_X_DEPARTAMENTO view ...
+SQL> 
+SQL> CREATE OR REPLACE VIEW RUBROS_X_DEPARTAMENTO
+  2  AS SELECT
+  3  		     R.ID_RUBRO
+  4  	       , D.ID_DEPARTAMENTO
+  5  	       , R.ID_CENTRO_COSTOS
+  6  	       , D.ID_CENTRO_COSTOS
+  7  	       , C.MES_GASTO
+  8  	     FROM RUBROS R, DEPARTAMENTOS D, CENTROCOSTOS C
+  9  	     WHERE R.ID_CENTRO_COSTOS = C.ID_CENTRO_COSTOS
+ 10  		     AND C.ID_CENTRO_COSTOS = D.ID_CENTRO_COSTOS
+ 11  
+SQL> WITH READ ONLY;
+WITH READ ONLY
+          *
+ERROR at line 1:
+ORA-00905: missing keyword
+
+
+SQL> 
+SQL> COMMIT;
+
+Commit complete.
+
+SQL> 
+SQL> --
+SQL> -- PONER DATOS EN LAS TABLAS
+SQL> --
+SQL> @@CentroCostos_popul
+SQL> 
+SQL> SET VERIFY OFF
+SQL> ALTER SESSION SET NLS_LANGUAGE=American;
+
+Session altered.
+
+SQL> 
+SQL> 
+SQL> ------------------------------------------------------------------------------
+SQL> REM ***************************insert data into the CENTROCOSTOS table
+SQL> 
+SQL> Prompt ******  Inserting values in CENTROCOSTOS table ....
+******  Inserting values in CENTROCOSTOS table ....
+SQL> 
+SQL> INSERT INTO CENTROCOSTOS(NOMBRE, SALDO, PRESUPUESTO, GASTO, MES_GASTO)
+  2  		VALUES ('Administracion', 1000000, 5000000, 200000, 'Setiembre');
+
+1 row created.
+
+SQL> INSERT INTO CENTROCOSTOS(NOMBRE, SALDO, PRESUPUESTO, GASTO, MES_GASTO)
+  2  		VALUES ('Programas', 100000, 2500000, 20000, 'Octubre');
+
+1 row created.
+
+SQL> INSERT INTO CENTROCOSTOS(NOMBRE, SALDO, PRESUPUESTO, GASTO, MES_GASTO)
+  2  		VALUES ('Escuelas', 25000, 1250000, 15000, 'Agosto');
+
+1 row created.
+
+SQL> INSERT INTO CENTROCOSTOS(NOMBRE, SALDO, PRESUPUESTO, GASTO, MES_GASTO)
+  2  		VALUES ('Servicios', 13000, 250000, 13000, 'Enero');
+
+1 row created.
+
+SQL> INSERT INTO CENTROCOSTOS(NOMBRE, SALDO, PRESUPUESTO, GASTO, MES_GASTO)
+  2  		VALUES ('Servidores', 50000, 100000, 25000, 'Febrero');
+
+1 row created.
+
+SQL> 
+SQL> 
+SQL> ------------------------------------------------------------------------------
+SQL> REM ***************************insert data into the DEPARTAMENTOS table
+SQL> 
+SQL> Prompt ******  Inserting values in DEPARTAMENTOS table ....
+******  Inserting values in DEPARTAMENTOS table ....
+SQL> 
+SQL> INSERT INTO DEPARTAMENTOS(NOMBRE, USUARIOS, ID_CENTRO_COSTOS)
+  2  		VALUES ('Rectoria', 20 , 1);
+
+1 row created.
+
+SQL> INSERT INTO DEPARTAMENTOS(NOMBRE, USUARIOS, ID_CENTRO_COSTOS)
+  2  		VALUES ('Vice Rectoria', 10 , 1);
+
+1 row created.
+
+SQL> INSERT INTO DEPARTAMENTOS(NOMBRE, USUARIOS, ID_CENTRO_COSTOS)
+  2  		VALUES ('Escuela de Informatica', 7 , 3);
+
+1 row created.
+
+SQL> INSERT INTO DEPARTAMENTOS(NOMBRE, USUARIOS, ID_CENTRO_COSTOS)
+  2  		VALUES ('Escuela de Derecho', 12 ,3);
+
+1 row created.
+
+SQL> INSERT INTO DEPARTAMENTOS(NOMBRE, USUARIOS, ID_CENTRO_COSTOS)
+  2  		VALUES ('Conserjeria', 25 ,4);
+
+1 row created.
+
+SQL> INSERT INTO DEPARTAMENTOS(NOMBRE, USUARIOS, ID_CENTRO_COSTOS)
+  2  		VALUES ('Atencion a Estudiantes', 16 ,4);
+
+1 row created.
+
+SQL> INSERT INTO DEPARTAMENTOS(NOMBRE, USUARIOS, ID_CENTRO_COSTOS)
+  2  		VALUES ('Administracion de Servidores', 5 ,5);
+
+1 row created.
+
+SQL> 
+SQL> 
+SQL> 
+SQL> ------------------------------------------------------------------------------
+SQL> REM ***************************insert data into the USUARIOS table
+SQL> 
+SQL> Prompt ******  Inserting values in USUARIOS table ....
+******  Inserting values in USUARIOS table ....
+SQL> 
+SQL> INSERT INTO USUARIOS(NOMBRE, PRIMERAPELLIDO, SEGUNDOAPELLIDO, USUARIO_RED, CORREO, NUMERO_TARJETA, ID_DEPARTAMENTO)
+  2  		VALUES ('Miguel', 'Aguero', 'Alfaro', 'maalfaro', 'maalfaro@gmail.com', '5670954625318965', 1);
+
+1 row created.
+
+SQL> INSERT INTO USUARIOS(NOMBRE, PRIMERAPELLIDO, SEGUNDOAPELLIDO, USUARIO_RED, CORREO, NUMERO_TARJETA, ID_DEPARTAMENTO)
+  2  		VALUES ('Pablo', 'Oconitrillo', 'Cipocio', 'pocipocio', 'pocipocio@gmail.com', '2378954156821349', 7);
+
+1 row created.
+
+SQL> 
+SQL> 
+SQL> ------------------------------------------------------------------------------
+SQL> REM ***************************insert data into the RUBROS table
+SQL> 
+SQL> Prompt ******  Inserting values in RUBROS table ....
+******  Inserting values in RUBROS table ....
+SQL> 
+SQL> INSERT INTO RUBROS(NOMBRE_RUBRO, DESCRIPCION, MES, ID_CENTRO_COSTOS)
+  2  		VALUES ('Salarios', 'Salarios de toda la administracion', 'Octubre', 1);
+
+1 row created.
+
+SQL> INSERT INTO RUBROS(NOMBRE_RUBRO, DESCRIPCION, MES, ID_CENTRO_COSTOS)
+  2  		VALUES ('Materiales Limpieza', 'Materiales de limpieza mensuales', 'Marzo', 4);
+
+1 row created.
+
+SQL> 
+SQL> ------------------------------------------------------------------------------
+SQL> REM ***************************insert data into the FACTURAS table
+SQL> 
+SQL> Prompt ******  Inserting values in FACTURAS table ....
+******  Inserting values in FACTURAS table ....
+SQL> 
+SQL> INSERT INTO FACTURAS(FECHA, ID_USUARIO)
+  2  		VALUES (DATE '2022-06-12','1');
+
+1 row created.
+
+SQL> INSERT INTO FACTURAS(FECHA, ID_USUARIO)
+  2  		VALUES (DATE '2022-02-28','2');
+
+1 row created.
+
+SQL> INSERT INTO FACTURAS(FECHA, ID_USUARIO)
+  2  		VALUES (DATE '2022-01-26','2');
+
+1 row created.
+
+SQL> INSERT INTO FACTURAS(FECHA, ID_USUARIO)
+  2  		VALUES (DATE '2022-09-06','1');
+
+1 row created.
+
+SQL> ------------------------------------------------------------------------------
+SQL> REM ***************************insert data into the COMPRAS table
+SQL> 
+SQL> Prompt ******  Inserting values in COMPRAS table ....
+******  Inserting values in COMPRAS table ....
+SQL> 
+SQL> INSERT INTO COMPRAS(MONTO, PERMISO_COMPRA, CANTIDAD, ID_CENTRO_COSTOS, ID_USUARIO, ID_RUBRO, ID_FACTURA)
+  2  		VALUES (20000, 123456, 1, 1, 1, 1, 1);
+
+1 row created.
+
+SQL> INSERT INTO COMPRAS(MONTO, PERMISO_COMPRA, CANTIDAD, ID_CENTRO_COSTOS, ID_USUARIO, ID_RUBRO, ID_FACTURA)
+  2  		VALUES (20000, 678912, 4, 2, 2, 2, 2);
+
+1 row created.
+
+SQL> 
+SQL> 
+SQL> COMMIT;
+
+Commit complete.
+
+SQL> 
+SQL> --
+SQL> -- CREACION DE PROCEDURES and TRIGGERS
+SQL> --
+SQL> @@CentroCostos_SP
+SQL> 
+SQL> SET FEEDBACK 1
+SQL> SET NUMWIDTH 10
+SQL> SET LINESIZE 80
+SQL> SET TRIMSPOOL ON
+SQL> SET PAGESIZE 100
+SQL> 
+SQL> ---------------------------------------------------------------------------
+SQL> /*
+SQL> REM **************************************************************************
+SQL> 
+SQL> REM procedure and statement trigger to allow dmls during business hours:
+SQL> CREATE OR REPLACE PROCEDURE secure_dml
+SQL> IS
+SQL> BEGIN
+SQL>   IF TO_CHAR (SYSDATE, 'HH24:MI') NOT BETWEEN '08:00' AND '18:00'
+SQL> 	     OR TO_CHAR (SYSDATE, 'DY') IN ('SAT', 'SUN') THEN
+SQL> 	     RAISE_APPLICATION_ERROR (-20205,
+SQL> 		     'You may only make changes during normal office hours');
+SQL>   END IF;
+SQL> END secure_dml;
+SQL> /
+SQL> 
+SQL> CREATE OR REPLACE TRIGGER secure_employees
+SQL>   BEFORE INSERT OR UPDATE OR DELETE ON employees
+SQL> BEGIN
+SQL>   secure_dml;
+SQL> END secure_employees;
+SQL> /
+SQL> 
+SQL> ALTER TRIGGER secure_employees DISABLE;
+SQL> */
+SQL> 
+SQL> ---------------------------------------------------------------------------
+SQL> 
+SQL> COMMIT;
+
+Commit complete.
+
+SQL> 
+SQL> --
+SQL> -- COMENTARIOS DE TABLAS Y COLUMNAS
+SQL> --
+SQL> @@CentroCostos_analz
+SQL> SET FEEDBACK 1
+SQL> SET NUMWIDTH 10
+SQL> SET LINESIZE 80
+SQL> SET TRIMSPOOL ON
+SQL> SET PAGESIZE 100
+SQL> 
+SQL> EXECUTE dbms_stats.gather_schema_stats( -
+> 	  USER				  ,	  -
+> 	  granularity => 'ALL'		  ,	  -
+> 	  cascade => TRUE		  ,	  -
+> 	  block_sample => TRUE		  );
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> SPOOL OFF
